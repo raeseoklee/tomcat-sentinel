@@ -4,6 +4,8 @@
 
 Lightweight Tomcat watchdog for OOM/log-based recovery on small Linux hosts.
 
+[한국어 문서](docs/ko/README.md)
+
 The sentinel monitors one Tomcat or JVM service process, detects abnormal shutdown patterns such as JVM OOM, backs up relevant logs, and restarts the service through `catalina.sh` or a custom command.
 
 The public name is Tomcat-first because that is the operational problem most users search for. The recovery engine is still generic enough to support Netty and other single JVM services through custom commands.
