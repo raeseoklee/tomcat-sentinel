@@ -154,3 +154,11 @@ scripts/docker-live-smoke.sh
 ```
 
 The smoke test runs a fake Netty/JVM process inside Linux, verifies `/proc` PID checks, classifies an OOM log, backs up logs, runs the configured start command, and confirms the restarted process is alive.
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
+
+## Notice
+
+`tomcat-sentinel` is not affiliated with, endorsed by, or sponsored by the Apache Software Foundation or the Apache Tomcat project. Apache Tomcat and Tomcat are trademarks of the Apache Software Foundation.
