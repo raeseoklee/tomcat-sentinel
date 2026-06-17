@@ -25,6 +25,7 @@ var knownKeys = []string{
 	"pid.command",
 	"status.command",
 	"log.paths",
+	"backup.paths",
 	"backup.dir",
 	"backup.max_bytes_per_file",
 	"backup.copy_buffer_bytes",
@@ -46,6 +47,7 @@ var knownKeys = []string{
 	"restart.on_unknown",
 	"restart.when_backup_fails",
 	"restart.min_mem_available_mb",
+	"incident.backup_on_pid_change",
 	"resource.profile",
 	"resource.soft_rss_limit_mb",
 	"resource.compression_enabled",
@@ -73,6 +75,7 @@ type Config struct {
 	LogScan  LogScanConfig
 	Runtime  RuntimeConfig
 	Restart  RestartConfig
+	Incident IncidentConfig
 	Resource ResourceConfig
 	Process  ProcessConfig
 	Patterns PatternConfig
@@ -87,6 +90,7 @@ type AppConfig struct {
 }
 
 type BackupConfig struct {
+	Paths           []string
 	Dir             string
 	MaxBytesPerFile int64
 	CopyBufferBytes int
@@ -120,6 +124,10 @@ type RestartConfig struct {
 	OnUnknown         bool
 	WhenBackupFails   bool
 	MinMemAvailableMB int
+}
+
+type IncidentConfig struct {
+	BackupOnPIDChange bool
 }
 
 type ResourceConfig struct {
@@ -187,6 +195,9 @@ func Default() Config {
 			OnUnknown:         false,
 			WhenBackupFails:   true,
 			MinMemAvailableMB: 32,
+		},
+		Incident: IncidentConfig{
+			BackupOnPIDChange: true,
 		},
 		Resource: ResourceConfig{
 			Profile:            "tiny-1vcpu-512m",
@@ -377,6 +388,8 @@ func applyProperties(cfg *Config, props map[string]string) error {
 			cfg.StatusCommand = value
 		case "log.paths":
 			cfg.LogPaths = csv(value)
+		case "backup.paths":
+			cfg.Backup.Paths = csv(value)
 		case "backup.dir":
 			cfg.Backup.Dir = value
 		case "backup.max_bytes_per_file":
@@ -419,6 +432,8 @@ func applyProperties(cfg *Config, props map[string]string) error {
 			cfg.Restart.WhenBackupFails, err = strconv.ParseBool(value)
 		case "restart.min_mem_available_mb":
 			cfg.Restart.MinMemAvailableMB, err = parseInt(value)
+		case "incident.backup_on_pid_change":
+			cfg.Incident.BackupOnPIDChange, err = strconv.ParseBool(value)
 		case "resource.profile":
 			cfg.Resource.Profile = value
 		case "resource.soft_rss_limit_mb":
@@ -469,6 +484,9 @@ func expandConfig(cfg *Config) {
 	cfg.Command.Stop = replacer.Replace(cfg.Command.Stop)
 	for i := range cfg.LogPaths {
 		cfg.LogPaths[i] = replacer.Replace(cfg.LogPaths[i])
+	}
+	for i := range cfg.Backup.Paths {
+		cfg.Backup.Paths[i] = replacer.Replace(cfg.Backup.Paths[i])
 	}
 	for i := range cfg.Command.Env {
 		cfg.Command.Env[i] = replacer.Replace(cfg.Command.Env[i])

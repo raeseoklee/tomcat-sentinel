@@ -123,7 +123,9 @@ Important optional fields:
 - `command.timeout`
 - `oom.patterns`
 - `shutdown.patterns`
+- `backup.paths`
 - `backup.retention.days`
+- `incident.backup_on_pid_change`
 - `log.scan_tail_bytes`
 - `log.scan_max_files`
 - `command.output_max_bytes`
@@ -148,7 +150,7 @@ PID resolution order:
 2. `pid.file`, when configured
 3. `status.command`, when configured
 
-The MVP should prefer `pid.file`. Tomcat supports `CATALINA_PID`; Netty or generic JVM apps should create a PID file in their wrapper script.
+The MVP should prefer `pid.file`. Tomcat supports `CATALINA_PID`; Netty or generic JVM apps should create a PID file in their wrapper script. A `pid.command` fallback should return exactly one PID, because ambiguous `pgrep` output can point the sentinel at the wrong JVM.
 
 Liveness check:
 
@@ -199,7 +201,7 @@ Low-memory scanning rules:
 
 ### 4.4 Log Backup Manager
 
-Before restart, copy configured log files into an incident directory.
+Before restart, copy configured log files into an incident directory. `log.paths` is the scan scope; `backup.paths` is the copy scope. If `backup.paths` is empty, the backup manager uses `log.paths` for compatibility.
 
 Directory format:
 
@@ -224,7 +226,7 @@ Directory format:
 
 Backup rules:
 
-- Copy only files matching `log.paths`.
+- Copy only files matching `backup.paths`, or `log.paths` when `backup.paths` is empty.
 - Support per-file max bytes by copying the tail when files are large.
 - Never delete source logs during backup.
 - Apply retention after a successful recovery attempt.
@@ -257,6 +259,12 @@ RESTARTING
   |
   +-- failure --> COOLDOWN --> RETRY or GIVE_UP
 ```
+
+If a watched PID changes while the service is already healthy, the sentinel can
+classify the event as an external restart and back up logs without running the
+start command. This preserves incident evidence when another supervisor, such as
+`tomcat.service` with `Restart=on-failure`, restarts Tomcat before the next
+sentinel poll.
 
 Rules:
 

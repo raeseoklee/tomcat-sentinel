@@ -15,11 +15,13 @@ tomcat.home=/srv/tomcat
 tomcat.base=/srv/tomcat/base
 pid.file=${app.base}/run/tomcat.pid
 log.paths=${app.base}/logs/catalina.out,${tomcat.base}/logs/catalina.*.log
+backup.paths=${app.base}/logs/catalina.out
 backup.dir=/backup
 check.interval=30s
 log.scan_tail_bytes=4096
 log.scan_max_files=2
 command.env=JAVA_HOME=/jvm,APP_LOG_DIR=${app.base}/logs
+incident.backup_on_pid_change=false
 `)
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatal(err)
@@ -47,8 +49,14 @@ command.env=JAVA_HOME=/jvm,APP_LOG_DIR=${app.base}/logs
 	if cfg.LogScan.TailBytes != 4096 || cfg.LogScan.MaxFiles != 2 {
 		t.Fatalf("LogScan=%+v", cfg.LogScan)
 	}
+	if len(cfg.Backup.Paths) != 1 || cfg.Backup.Paths[0] != "/srv/tomcat/base/logs/catalina.out" {
+		t.Fatalf("Backup.Paths=%+v", cfg.Backup.Paths)
+	}
 	if cfg.Backup.MaxBytesPerFile != 12345 {
 		t.Fatalf("Backup.MaxBytesPerFile=%d", cfg.Backup.MaxBytesPerFile)
+	}
+	if cfg.Incident.BackupOnPIDChange {
+		t.Fatal("Incident.BackupOnPIDChange=true")
 	}
 	if got := cfg.Command.Env[1]; got != "APP_LOG_DIR=/srv/tomcat/base/logs" {
 		t.Fatalf("Command.Env[1]=%q", got)
@@ -127,5 +135,8 @@ func TestLoadDefaultsValidate(t *testing.T) {
 	}
 	if cfg.LogScan.TailBytes != 512*1024 {
 		t.Fatalf("LogScan.TailBytes=%d", cfg.LogScan.TailBytes)
+	}
+	if !cfg.Incident.BackupOnPIDChange {
+		t.Fatal("Incident.BackupOnPIDChange=false")
 	}
 }

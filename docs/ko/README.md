@@ -40,6 +40,8 @@
 
 정상 상태에서는 로그 파일을 반복 스캔하지 않습니다.
 
+단, sentinel이 실행 중인 상태에서 감시 대상 PID가 바뀌면 외부 재시작으로 보고 로그 백업만 수행할 수 있습니다. 이 기능은 `tomcat.service`의 `Restart=on-failure`처럼 systemd가 Tomcat을 먼저 살려버리는 구성을 보완하기 위한 것입니다.
+
 ## 저사양 서버 기준
 
 기본 설정은 1 vCPU / 512 MiB 서버를 기준으로 보수적으로 잡혀 있습니다.
@@ -85,6 +87,7 @@ app.base=/opt/tomcat
 
 pid.file=/opt/tomcat/temp/tomcat.pid
 log.paths=/opt/tomcat/logs/catalina.out,/opt/tomcat/logs/catalina.*.log,/opt/tomcat/logs/localhost.*.log
+backup.paths=/opt/tomcat/logs/catalina.out
 backup.dir=/var/backups/tomcat-sentinel
 
 start.command=/opt/tomcat/bin/catalina.sh start
@@ -93,6 +96,8 @@ process.command_hint=org.apache.catalina.startup.Bootstrap
 ```
 
 Tomcat은 `CATALINA_PID`를 반드시 안정적으로 쓰도록 맞추는 것이 좋습니다.
+
+`log.paths`는 장애 시점에 스캔할 로그이고, `backup.paths`는 실제 incident 디렉터리에 복사할 로그입니다. `backup.paths`를 비워두면 `log.paths` 전체가 백업됩니다. 작은 디스크에서는 rotated 로그 전체가 매번 복사되지 않도록 `backup.paths`를 `catalina.out`처럼 좁게 시작하는 편이 안전합니다.
 
 ## Netty 설정 예시
 
@@ -112,6 +117,7 @@ app.base=/var/lib/netty-api
 
 pid.file=${app.base}/run/netty-api.pid
 log.paths=${app.base}/logs/app.log,${app.base}/logs/app.*.log
+backup.paths=${app.base}/logs/app.log
 start.command=${app.home}/bin/start.sh
 stop.command=${app.home}/bin/stop.sh
 process.command_hint=com.example.netty.Main
@@ -135,6 +141,22 @@ journalctl -u tomcat-sentinel -f
 ```
 
 Netty용 템플릿은 `packaging/systemd/tomcat-sentinel-netty.service`를 참고합니다.
+
+### Tomcat이 별도 systemd 서비스일 때
+
+이미 `tomcat.service`가 Tomcat을 관리하고 있다면 sentinel이 `catalina.sh`를 직접 실행하지 않고 systemd에 위임하는 편이 충돌이 적습니다.
+
+```properties
+start.command=/usr/bin/systemctl start tomcat
+stop.command=/usr/bin/systemctl stop tomcat
+incident.backup_on_pid_change=true
+```
+
+`tomcat.service`에 `Restart=on-failure`가 켜져 있으면 systemd가 sentinel보다 먼저 Tomcat을 재기동할 수 있습니다. 이 경우 sentinel은 다운 상태를 못 보고 지나갈 수 있으므로, `incident.backup_on_pid_change=true`로 새 PID를 감지했을 때 백업만 남기게 둡니다.
+
+sentinel이 반드시 먼저 백업하고 재기동해야 한다면 `tomcat.service`의 자동 재시작을 끄거나, `RestartSec`를 `check.interval + down.debounce`보다 길게 둡니다. 반대로 systemd를 빠른 fallback으로 쓰려면 `Restart=on-failure`를 유지하고 PID 변경 백업을 켭니다.
+
+기본 sentinel unit은 `User=tomcat` 기준이며 `catalina.sh` 직접 실행에 맞춰져 있습니다. `systemctl start tomcat`을 실행하려면 root로 실행하거나 제한된 sudo/polkit/wrapper 정책을 별도로 구성해야 하며, 이 경우 `NoNewPrivileges` 설정도 함께 조정해야 합니다.
 
 ## 수동 검증
 
@@ -187,7 +209,8 @@ scripts/docker-live-smoke.sh
 | --- | --- |
 | `pid.file` | 감시 대상 PID 파일 |
 | `pid.command` | PID 파일이 없을 때 사용할 custom PID 명령 |
-| `log.paths` | 스캔/백업할 로그 glob 목록 |
+| `log.paths` | 장애 시점에 스캔할 로그 glob 목록 |
+| `backup.paths` | incident에 복사할 로그 glob 목록. 비우면 `log.paths` 사용 |
 | `backup.dir` | incident 백업 디렉터리 |
 | `start.command` | 재기동 명령 |
 | `stop.command` | 중지 명령 |
@@ -198,6 +221,7 @@ scripts/docker-live-smoke.sh
 | `restart.window` | 재시작 횟수 제한 기간 |
 | `log.scan_tail_bytes` | 로그 파일당 tail scan 크기 |
 | `log.scan_max_files` | 한 사이클에서 스캔할 최대 파일 수 |
+| `incident.backup_on_pid_change` | 정상 실행 중 PID가 바뀌면 외부 재시작으로 보고 백업만 수행 |
 
 환경변수 override는 `TOMCAT_SENTINEL_` prefix를 사용합니다.
 
@@ -209,4 +233,3 @@ TOMCAT_SENTINEL_START_COMMAND="/opt/tomcat/bin/catalina.sh start"
 ```
 
 이전 이름에서 쓰던 `JVM_SENTINEL_` prefix도 호환됩니다.
-

@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	ClassificationOOM      = "oom"
-	ClassificationShutdown = "shutdown"
-	ClassificationCrash    = "crash"
+	ClassificationOOM       = "oom"
+	ClassificationShutdown  = "shutdown"
+	ClassificationCrash     = "crash"
+	ClassificationPIDChange = "pid-change"
 )
 
 type Scanner struct {

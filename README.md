@@ -85,6 +85,7 @@ Tomcat is the default profile, but the monitor/recovery engine is generic. For N
 - `app.base`
 - `pid.file`
 - `log.paths`
+- `backup.paths`
 - `start.command`
 - `stop.command`
 - `process.command_hint`
@@ -106,6 +107,12 @@ cp config/netty-sentinel.properties.example /etc/tomcat-sentinel/netty.propertie
 ```
 
 Environment overrides use the `TOMCAT_SENTINEL_` prefix, for example `TOMCAT_SENTINEL_CHECK_INTERVAL=30s`. The older `JVM_SENTINEL_` prefix is accepted for compatibility.
+
+`log.paths` controls which files are scanned after a suspected failure.
+`backup.paths` controls which files are copied into an incident bundle. If
+`backup.paths` is empty, the sentinel backs up `log.paths`. On small disks, keep
+`backup.paths` narrower than `log.paths`, for example only `catalina.out`, so a
+single incident does not copy months of rotated logs.
 
 ## Initial Artifacts
 
@@ -144,6 +151,31 @@ tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties
 ```
 
 The default production path is systemd using [packaging/systemd/tomcat-sentinel.service](packaging/systemd/tomcat-sentinel.service) or [packaging/systemd/tomcat-sentinel-netty.service](packaging/systemd/tomcat-sentinel-netty.service).
+
+### Tomcat Managed By systemd
+
+If Tomcat is already managed by a separate `tomcat.service`, point the sentinel
+restart command at systemd instead of starting Tomcat directly:
+
+```properties
+start.command=/usr/bin/systemctl start tomcat
+stop.command=/usr/bin/systemctl stop tomcat
+incident.backup_on_pid_change=true
+```
+
+When `tomcat.service` also has `Restart=on-failure`, systemd may restart Tomcat
+before the sentinel observes a down PID. With `incident.backup_on_pid_change`,
+the sentinel records a backup when it later sees that the watched PID changed,
+but it does not run another restart command.
+
+For deterministic sentinel-first recovery, either disable automatic restart on
+`tomcat.service` or set `RestartSec` longer than `check.interval + down.debounce`.
+For fallback-first recovery, keep `Restart=on-failure` and leave
+`incident.backup_on_pid_change=true`.
+
+The default sentinel unit runs as `tomcat` and is meant for `catalina.sh`. If the
+sentinel uses `systemctl start tomcat`, run it with sufficient privileges or use
+a tightly scoped wrapper/sudo policy, and adjust `NoNewPrivileges` accordingly.
 
 ## Live Smoke
 

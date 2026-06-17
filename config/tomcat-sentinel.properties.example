@@ -17,12 +17,16 @@ tomcat.base=/opt/tomcat
 pid.file=/opt/tomcat/temp/tomcat.pid
 
 # Optional PID resolver command. If set, this takes precedence over pid.file.
-# pid.command=pgrep -f 'org.apache.catalina.startup.Bootstrap'
+# Prefer a command that returns exactly one PID, for example the newest match.
+# pid.command=pgrep -n -f 'org.apache.catalina.startup.Bootstrap'
 
-# Log files to inspect and back up. Comma-separated glob patterns.
+# Log files to inspect. Comma-separated glob patterns.
 log.paths=/opt/tomcat/logs/catalina.out,/opt/tomcat/logs/catalina.*.log,/opt/tomcat/logs/localhost.*.log
 
-# Backup location for incident bundles.
+# Backup location and scope for incident bundles. If backup.paths is empty,
+# log.paths are backed up. Keep backup.paths narrow on small disks to avoid
+# copying months of rotated logs on each incident.
+backup.paths=/opt/tomcat/logs/catalina.out
 backup.dir=/var/backups/tomcat-sentinel
 backup.max_bytes_per_file=8388608
 backup.copy_buffer_bytes=32768
@@ -55,6 +59,10 @@ restart.window=10m
 restart.on_unknown=false
 restart.when_backup_fails=true
 restart.min_mem_available_mb=32
+
+# Back up logs when the watched PID changes while the service is already
+# running. This catches fast external restarts, such as systemd Restart=on-failure.
+incident.backup_on_pid_change=true
 
 # Sentinel resource budget. The tiny profile targets 1 vCPU / 512 MiB hosts.
 resource.profile=tiny-1vcpu-512m

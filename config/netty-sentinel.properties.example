@@ -11,10 +11,12 @@ app.base=/var/lib/netty-api
 pid.file=${app.base}/run/netty-api.pid
 
 # Optional fallback when no PID file is available. PID file is still preferred.
-# pid.command=pgrep -f 'com.example.netty.Main'
+# Prefer a command that returns exactly one PID, for example the newest match.
+# pid.command=pgrep -n -f 'com.example.netty.Main'
 
 log.paths=${app.base}/logs/app.log,${app.base}/logs/app.*.log
 
+backup.paths=${app.base}/logs/app.log
 backup.dir=/var/backups/tomcat-sentinel/${app.name}
 backup.max_bytes_per_file=8388608
 backup.copy_buffer_bytes=32768
@@ -41,6 +43,8 @@ restart.window=10m
 restart.on_unknown=false
 restart.when_backup_fails=true
 restart.min_mem_available_mb=32
+
+incident.backup_on_pid_change=true
 
 resource.profile=tiny-1vcpu-512m
 resource.soft_rss_limit_mb=24

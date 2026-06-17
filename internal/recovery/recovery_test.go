@@ -3,13 +3,17 @@ package recovery
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/raeseoklee/tomcat-sentinel/internal/backup"
 	"github.com/raeseoklee/tomcat-sentinel/internal/config"
+	"github.com/raeseoklee/tomcat-sentinel/internal/logscan"
 	"github.com/raeseoklee/tomcat-sentinel/internal/process"
 )
 
@@ -54,6 +58,75 @@ func TestCheckOnceBacksUpAndRestartsWhenProcessDown(t *testing.T) {
 	}
 }
 
+func TestCheckOnceBacksUpWithoutRestartWhenPIDChanges(t *testing.T) {
+	cfg, procRoot, marker := testConfig(t, true)
+	var logs bytes.Buffer
+	s := New(cfg, log.New(&logs, "", 0), "test")
+	s.Resolver.Inspector = process.ProcInspector{ProcRoot: procRoot}
+	s.sleep = noSleep
+
+	if result, err := s.CheckOnce(context.Background()); err != nil || result.State != "running" {
+		t.Fatalf("initial result=%+v err=%v", result, err)
+	}
+
+	if err := os.WriteFile(cfg.PIDFile, []byte("4243\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	writeFakeProc(t, procRoot, 4243)
+
+	result, err := s.CheckOnce(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.State != "pid-changed" || result.Restarted {
+		t.Fatalf("result=%+v logs=%s", result, logs.String())
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatalf("start marker should not exist after pid-change backup: %v", err)
+	}
+	manifestData, err := os.ReadFile(filepath.Join(result.BackupDir, "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var manifest backup.Manifest
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if manifest.PID != 4242 || manifest.Classification != logscan.ClassificationOOM {
+		t.Fatalf("manifest=%+v", manifest)
+	}
+}
+
+func TestBackupLogsUsesBackupPathsWhenConfigured(t *testing.T) {
+	cfg, _, _ := testConfig(t, true)
+	dir := t.TempDir()
+	scanLog := filepath.Join(dir, "scan.log")
+	backupLog := filepath.Join(dir, "backup.log")
+	if err := os.WriteFile(scanLog, []byte("scan"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(backupLog, []byte("backup"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg.LogPaths = []string{scanLog, backupLog}
+	cfg.Backup.Paths = []string{backupLog}
+	cfg.Backup.Dir = filepath.Join(dir, "backup-dir")
+
+	s := New(cfg, log.New(&bytes.Buffer{}, "", 0), "test")
+	result, err := s.backupLogs(backup.Incident{
+		Time:           time.Date(2026, 6, 17, 1, 2, 3, 0, time.UTC),
+		Classification: logscan.ClassificationCrash,
+		PID:            4242,
+		Reason:         "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Files) != 1 || result.Files[0].Source != backupLog {
+		t.Fatalf("files=%+v", result.Files)
+	}
+}
+
 func testConfig(t *testing.T, alive bool) (config.Config, string, string) {
 	t.Helper()
 
@@ -73,7 +146,6 @@ func testConfig(t *testing.T, alive bool) (config.Config, string, string) {
 		t.Fatal(err)
 	}
 
-	pid := 4242
 	pidFile := filepath.Join(tempDir, "tomcat.pid")
 	if err := os.WriteFile(pidFile, []byte("4242\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -81,16 +153,7 @@ func testConfig(t *testing.T, alive bool) (config.Config, string, string) {
 
 	procRoot := filepath.Join(root, "proc")
 	if alive {
-		procDir := filepath.Join(procRoot, "4242")
-		if err := os.MkdirAll(procDir, 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(procDir, "stat"), []byte("4242 (java) S 1 2 3"), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(procDir, "cmdline"), []byte("java\x00org.apache.catalina.startup.Bootstrap\x00"), 0o600); err != nil {
-			t.Fatal(err)
-		}
+		writeFakeProc(t, procRoot, 4242)
 	}
 
 	marker := filepath.Join(root, "started")
@@ -116,8 +179,22 @@ func testConfig(t *testing.T, alive bool) (config.Config, string, string) {
 		procDir := filepath.Join(procRoot, "4242")
 		cfg.Command.Start = "mkdir -p " + procDir + " && printf '4242 (java) S 1 2 3' > " + filepath.Join(procDir, "stat") + " && printf 'java\\0org.apache.catalina.startup.Bootstrap\\0' > " + filepath.Join(procDir, "cmdline") + " && touch " + marker
 	}
-	_ = pid
 	return cfg, procRoot, marker
+}
+
+func writeFakeProc(t *testing.T, procRoot string, pid int) {
+	t.Helper()
+
+	procDir := filepath.Join(procRoot, strconv.Itoa(pid))
+	if err := os.MkdirAll(procDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(procDir, "stat"), []byte(strconv.Itoa(pid)+" (java) S 1 2 3"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(procDir, "cmdline"), []byte("java\x00org.apache.catalina.startup.Bootstrap\x00"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestNewUsesGenericAppEnvForNetty(t *testing.T) {

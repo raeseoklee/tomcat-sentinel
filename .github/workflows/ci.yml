@@ -31,8 +31,8 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Build Linux binaries
-        run: make dist-linux VERSION=${{ github.sha }}
+      - name: Build And Package Linux archives
+        run: make package-linux VERSION=${{ github.sha }}
 
       - name: Docker live smoke
         run: scripts/docker-live-smoke.sh
@@ -44,4 +44,6 @@ jobs:
           path: |
             dist/tomcat-sentinel-linux-amd64
             dist/tomcat-sentinel-linux-arm64
+            dist/tomcat-sentinel-*.tar.gz
+            dist/SHA256SUMS
           if-no-files-found: error

@@ -4,6 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
+# This default unit is for direct catalina.sh starts as the tomcat user.
+# If start.command uses systemctl start tomcat, run this service with sufficient
+# privileges or a tightly scoped wrapper/sudo policy, and revisit NoNewPrivileges.
 User=tomcat
 Group=tomcat
 ExecStart=/usr/local/bin/tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties

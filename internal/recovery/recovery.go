@@ -24,6 +24,7 @@ type Sentinel struct {
 	Runner   command.Runner
 
 	attempts []time.Time
+	lastPID  int
 	now      func() time.Time
 	sleep    func(context.Context, time.Duration) error
 }
@@ -106,6 +107,9 @@ func (s *Sentinel) CheckOnce(ctx context.Context) (CheckResult, error) {
 		return CheckResult{State: "unknown", Message: "pid check failed"}, err
 	}
 	if check.Alive && check.Trusted {
+		if result, handled, err := s.handleRunningPID(ctx, check); handled || err != nil {
+			return result, err
+		}
 		return CheckResult{State: "running", Message: fmt.Sprintf("pid %d alive", check.PID)}, nil
 	}
 	if check.Alive && !check.Trusted {
@@ -128,6 +132,9 @@ func (s *Sentinel) CheckOnce(ctx context.Context) (CheckResult, error) {
 			return CheckResult{State: "unknown", Message: "pid confirm failed"}, err
 		}
 		if confirm.Alive && confirm.Trusted {
+			if result, handled, err := s.handleRunningPID(ctx, confirm); handled || err != nil {
+				return result, err
+			}
 			return CheckResult{State: "running", Message: fmt.Sprintf("pid %d alive after debounce", confirm.PID)}, nil
 		}
 		check = confirm
@@ -138,6 +145,42 @@ func (s *Sentinel) CheckOnce(ctx context.Context) (CheckResult, error) {
 		return CheckResult{State: "down", Message: "log scan failed"}, err
 	}
 	return s.recover(ctx, check, scanReport.Classification, scanReport.Evidence)
+}
+
+func (s *Sentinel) handleRunningPID(_ context.Context, check process.Check) (CheckResult, bool, error) {
+	previousPID := s.lastPID
+	s.lastPID = check.PID
+	if previousPID <= 0 || previousPID == check.PID || !s.Config.Incident.BackupOnPIDChange {
+		return CheckResult{}, false, nil
+	}
+
+	scanReport, err := s.scanLogs()
+	if err != nil {
+		return CheckResult{State: "pid-changed", Message: "log scan failed after pid change"}, true, err
+	}
+	classification := scanReport.Classification
+	if len(scanReport.Evidence) == 0 {
+		classification = logscan.ClassificationPIDChange
+	}
+	incident := backup.Incident{
+		Time:           s.now(),
+		Classification: classification,
+		PID:            previousPID,
+		Reason:         fmt.Sprintf("pid changed from %d to %d via %s", previousPID, check.PID, check.Reason),
+		Evidence:       scanReport.Evidence,
+	}
+	backupResult, err := s.backupLogs(incident)
+	result := CheckResult{
+		State:          "pid-changed",
+		Classification: classification,
+		Message:        fmt.Sprintf("pid changed from %d to %d; backed up logs without restart", previousPID, check.PID),
+	}
+	if err != nil {
+		result.Message = "backup failed after pid change"
+		return result, true, err
+	}
+	result.BackupDir = backupResult.Dir
+	return result, true, nil
 }
 
 func (s *Sentinel) recover(ctx context.Context, check process.Check, classification string, evidence []logscan.Evidence) (CheckResult, error) {
@@ -193,11 +236,13 @@ func (s *Sentinel) recover(ctx context.Context, check process.Check, classificat
 		return result, err
 	}
 
-	if err := s.verifyRunning(ctx); err != nil {
+	verifyCheck, err := s.verifyRunning(ctx)
+	if err != nil {
 		result.State = "verify-failed"
 		result.Message = "start command succeeded but pid did not become healthy"
 		return result, err
 	}
+	s.lastPID = verifyCheck.PID
 	result.State = "restarted"
 	result.Restarted = true
 	result.Message = cfgName(s.Config) + " restarted"
@@ -216,8 +261,12 @@ func (s *Sentinel) scanLogs() (logscan.Report, error) {
 }
 
 func (s *Sentinel) backupLogs(incident backup.Incident) (backup.Result, error) {
+	logPaths := s.Config.Backup.Paths
+	if len(logPaths) == 0 {
+		logPaths = s.Config.LogPaths
+	}
 	manager := backup.Manager{
-		LogPaths:        s.Config.LogPaths,
+		LogPaths:        logPaths,
 		Dir:             s.Config.Backup.Dir,
 		MaxBytesPerFile: s.Config.Backup.MaxBytesPerFile,
 		CopyBufferBytes: s.Config.Backup.CopyBufferBytes,
@@ -227,21 +276,21 @@ func (s *Sentinel) backupLogs(incident backup.Incident) (backup.Result, error) {
 	return manager.Backup(incident)
 }
 
-func (s *Sentinel) verifyRunning(ctx context.Context) error {
+func (s *Sentinel) verifyRunning(ctx context.Context) (process.Check, error) {
 	deadline := s.now().Add(s.Config.Runtime.StartupVerifyTimeout)
 	for {
 		check, err := s.Resolver.Check(ctx)
 		if err == nil && check.Alive && check.Trusted {
-			return nil
+			return check, nil
 		}
 		if !s.now().Before(deadline) {
 			if err != nil {
-				return err
+				return process.Check{}, err
 			}
-			return fmt.Errorf("%s did not become healthy before timeout", cfgName(s.Config))
+			return process.Check{}, fmt.Errorf("%s did not become healthy before timeout", cfgName(s.Config))
 		}
 		if err := s.sleep(ctx, s.Config.Runtime.StartupVerifyInterval); err != nil {
-			return err
+			return process.Check{}, err
 		}
 	}
 }
