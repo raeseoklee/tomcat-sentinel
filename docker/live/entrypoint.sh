@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT="/tmp/jvm-sentinel-live"
+ROOT="/tmp/tomcat-sentinel-live"
 rm -rf "$ROOT"
 mkdir -p "$ROOT/app/bin" "$ROOT/app/logs" "$ROOT/app/run" "$ROOT/backup"
 
@@ -72,7 +72,7 @@ oom.patterns=java.lang.OutOfMemoryError,Java heap space
 shutdown.patterns=Stopping,Shutdown
 EOF
 
-jvm-sentinel -config "$ROOT/sentinel.properties" -once > "$ROOT/sentinel.out" 2>&1
+tomcat-sentinel -config "$ROOT/sentinel.properties" -once > "$ROOT/sentinel.out" 2>&1
 
 PID="$(cat "$ROOT/app/run/app.pid")"
 kill -0 "$PID"

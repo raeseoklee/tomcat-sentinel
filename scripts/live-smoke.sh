@@ -1,13 +1,13 @@
 #!/bin/sh
 set -eu
 
-BIN="${BIN:-./bin/jvm-sentinel}"
+BIN="${BIN:-./bin/tomcat-sentinel}"
 if [ ! -x "$BIN" ]; then
   echo "missing executable: $BIN" >&2
   exit 1
 fi
 
-ROOT="$(mktemp -d "${TMPDIR:-/tmp}/jvm-sentinel-live.XXXXXX")"
+ROOT="$(mktemp -d "${TMPDIR:-/tmp}/tomcat-sentinel-live.XXXXXX")"
 cleanup() {
   if [ -f "$ROOT/app/run/app.pid" ]; then
     PID="$(cat "$ROOT/app/run/app.pid" 2>/dev/null || true)"

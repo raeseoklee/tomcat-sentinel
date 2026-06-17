@@ -1,12 +1,12 @@
 [Unit]
-Description=JVM Sentinel
+Description=Tomcat Sentinel
 After=network.target
 
 [Service]
 Type=simple
 User=tomcat
 Group=tomcat
-ExecStart=/usr/local/bin/jvm-sentinel -config /etc/jvm-sentinel/tomcat.properties
+ExecStart=/usr/local/bin/tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties
 Restart=always
 RestartSec=5
 KillSignal=SIGTERM
@@ -28,7 +28,7 @@ Environment=GOGC=50
 NoNewPrivileges=true
 PrivateTmp=false
 ProtectSystem=full
-ReadWritePaths=/opt/tomcat /var/backups/jvm-sentinel /var/log/jvm-sentinel
+ReadWritePaths=/opt/tomcat /var/backups/tomcat-sentinel /var/log/tomcat-sentinel
 
 [Install]
 WantedBy=multi-user.target

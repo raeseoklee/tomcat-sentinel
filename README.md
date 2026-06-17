@@ -1,12 +1,12 @@
-# jvm-sentinel
+# tomcat-sentinel
 
-[![CI](https://github.com/raeseoklee/jvm-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/raeseoklee/jvm-sentinel/actions/workflows/ci.yml)
+[![CI](https://github.com/raeseoklee/tomcat-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/raeseoklee/tomcat-sentinel/actions/workflows/ci.yml)
 
-Lightweight JVM service sentinel for Linux MVP.
+Lightweight Tomcat watchdog for OOM/log-based recovery on small Linux hosts.
 
-The sentinel monitors one JVM service process, detects abnormal shutdown patterns such as JVM OOM, backs up relevant logs, and restarts the service through `catalina.sh` or a custom command.
+The sentinel monitors one Tomcat or JVM service process, detects abnormal shutdown patterns such as JVM OOM, backs up relevant logs, and restarts the service through `catalina.sh` or a custom command.
 
-The repository name is `jvm-sentinel` rather than `tomcat-sentinel` because the recovery engine is PID/log/command based and supports Tomcat, Netty, and other single JVM services.
+The public name is Tomcat-first because that is the operational problem most users search for. The recovery engine is still generic enough to support Netty and other single JVM services through custom commands.
 
 ## MVP Scope
 
@@ -87,32 +87,32 @@ Tomcat is the default profile, but the monitor/recovery engine is generic. For N
 - `stop.command`
 - `process.command_hint`
 
-See [config/netty.properties.example](config/netty.properties.example).
+See [config/netty-sentinel.properties.example](config/netty-sentinel.properties.example).
 
 ## Configuration
 
 Tomcat:
 
 ```sh
-cp config/tomcat.properties.example /etc/jvm-sentinel/tomcat.properties
+cp config/tomcat-sentinel.properties.example /etc/tomcat-sentinel/tomcat.properties
 ```
 
 Netty or another JVM service:
 
 ```sh
-cp config/netty.properties.example /etc/jvm-sentinel/netty.properties
+cp config/netty-sentinel.properties.example /etc/tomcat-sentinel/netty.properties
 ```
 
-Environment overrides use the `JVM_SENTINEL_` prefix, for example `JVM_SENTINEL_CHECK_INTERVAL=30s`. The older `TOMCAT_SENTINEL_` prefix is accepted for compatibility.
+Environment overrides use the `TOMCAT_SENTINEL_` prefix, for example `TOMCAT_SENTINEL_CHECK_INTERVAL=30s`. The older `JVM_SENTINEL_` prefix is accepted for compatibility.
 
 ## Initial Artifacts
 
 - [Architecture](docs/architecture.md)
 - [Implementation language decision](docs/decisions/0001-use-go-for-mvp.md)
-- [Tomcat config example](config/tomcat.properties.example)
-- [Netty config example](config/netty.properties.example)
-- [Tomcat systemd service template](packaging/systemd/jvm-sentinel-tomcat.service)
-- [Netty systemd service template](packaging/systemd/jvm-sentinel-netty.service)
+- [Tomcat config example](config/tomcat-sentinel.properties.example)
+- [Netty config example](config/netty-sentinel.properties.example)
+- [Tomcat systemd service template](packaging/systemd/tomcat-sentinel.service)
+- [Netty systemd service template](packaging/systemd/tomcat-sentinel-netty.service)
 
 ## Build
 
@@ -124,24 +124,24 @@ make dist-linux VERSION=0.1.0
 
 Linux outputs:
 
-- `dist/jvm-sentinel-linux-amd64`
-- `dist/jvm-sentinel-linux-arm64`
+- `dist/tomcat-sentinel-linux-amd64`
+- `dist/tomcat-sentinel-linux-arm64`
 
 ## Run
 
 One-shot check:
 
 ```sh
-jvm-sentinel -config /etc/jvm-sentinel/tomcat.properties -once
+tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties -once
 ```
 
 Long-running service mode:
 
 ```sh
-jvm-sentinel -config /etc/jvm-sentinel/tomcat.properties
+tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties
 ```
 
-The default production path is systemd using [packaging/systemd/jvm-sentinel-tomcat.service](packaging/systemd/jvm-sentinel-tomcat.service) or [packaging/systemd/jvm-sentinel-netty.service](packaging/systemd/jvm-sentinel-netty.service).
+The default production path is systemd using [packaging/systemd/tomcat-sentinel.service](packaging/systemd/tomcat-sentinel.service) or [packaging/systemd/tomcat-sentinel-netty.service](packaging/systemd/tomcat-sentinel-netty.service).
 
 ## Live Smoke
 

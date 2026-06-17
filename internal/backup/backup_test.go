@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/logscan"
+	"github.com/raeseoklee/tomcat-sentinel/internal/logscan"
 )
 
 func TestBackupCopiesTailAndManifest(t *testing.T) {

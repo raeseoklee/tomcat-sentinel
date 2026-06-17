@@ -1,4 +1,4 @@
-# JVM Sentinel Architecture
+# Tomcat Sentinel Architecture
 
 ## 1. Goal
 
@@ -22,7 +22,7 @@ The MVP is a single long-running Go process.
 
 ```text
 +-------------------+
-| jvm-sentinel      |
+| tomcat-sentinel      |
 +---------+---------+
           |
           v
@@ -76,7 +76,7 @@ Target budget for the MVP:
 Implementation constraints:
 
 - Use Go standard library only for the MVP.
-- Build as one static or mostly-static CLI binary named `jvm-sentinel`.
+- Build as one static or mostly-static CLI binary named `tomcat-sentinel`.
 - Keep the monitor loop synchronous unless a specific command requires a short-lived goroutine for timeout handling.
 - Parse `key=value` config directly; do not add YAML/TOML libraries initially.
 - Match log patterns with substring checks, not regular expressions, unless a later version proves regex is needed.
@@ -129,9 +129,9 @@ Important optional fields:
 - `command.output_max_bytes`
 - `resource.soft_rss_limit_mb`
 
-Environment variables should use the `JVM_SENTINEL_` prefix. For example, `JVM_SENTINEL_CONFIG`, `JVM_SENTINEL_START_COMMAND`, and `JVM_SENTINEL_CHECK_INTERVAL`.
+Environment variables should use the `TOMCAT_SENTINEL_` prefix. For example, `TOMCAT_SENTINEL_CONFIG`, `TOMCAT_SENTINEL_START_COMMAND`, and `TOMCAT_SENTINEL_CHECK_INTERVAL`.
 
-The legacy `TOMCAT_SENTINEL_` prefix is accepted for compatibility, but new deployments should use `JVM_SENTINEL_`.
+The legacy `JVM_SENTINEL_` prefix is accepted for compatibility, but new deployments should use `TOMCAT_SENTINEL_`.
 
 Compatibility aliases:
 
@@ -303,7 +303,7 @@ The sentinel should write its own log separately from application logs.
 Default paths:
 
 - stdout/stderr under systemd journal
-- optional file: `/var/log/jvm-sentinel/sentinel.log`
+- optional file: `/var/log/tomcat-sentinel/sentinel.log`
 
 Minimum event types:
 
@@ -333,7 +333,7 @@ Run with systemd as a normal service:
 
 Recommended service behavior:
 
-- `ExecStart=/usr/local/bin/jvm-sentinel -config /etc/jvm-sentinel/tomcat.properties`
+- `ExecStart=/usr/local/bin/tomcat-sentinel -config /etc/tomcat-sentinel/tomcat.properties`
 - `Restart=always`
 - `RestartSec=5`
 - `KillSignal=SIGTERM`
@@ -397,7 +397,7 @@ The MVP should not overbuild these abstractions, but file and package boundaries
 ## 10. Suggested Source Layout
 
 ```text
-cmd/jvm-sentinel/main.go
+cmd/tomcat-sentinel/main.go
 internal/config/
 internal/process/
 internal/logscan/

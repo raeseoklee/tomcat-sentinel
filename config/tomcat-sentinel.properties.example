@@ -1,7 +1,7 @@
-# jvm-sentinel MVP config
+# tomcat-sentinel MVP config
 #
 # The MVP config format is intentionally simple: key=value.
-# Environment variables with JVM_SENTINEL_ prefix may override selected keys.
+# Environment variables with TOMCAT_SENTINEL_ prefix may override selected keys.
 
 # Required application paths. Tomcat aliases are kept for compatibility.
 app.name=tomcat
@@ -23,7 +23,7 @@ pid.file=/opt/tomcat/temp/tomcat.pid
 log.paths=/opt/tomcat/logs/catalina.out,/opt/tomcat/logs/catalina.*.log,/opt/tomcat/logs/localhost.*.log
 
 # Backup location for incident bundles.
-backup.dir=/var/backups/jvm-sentinel
+backup.dir=/var/backups/tomcat-sentinel
 backup.max_bytes_per_file=8388608
 backup.copy_buffer_bytes=32768
 backup.retention.days=7

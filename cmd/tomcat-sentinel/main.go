@@ -11,15 +11,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/config"
-	"github.com/raeseoklee/jvm-sentinel/internal/recovery"
+	"github.com/raeseoklee/tomcat-sentinel/internal/config"
+	"github.com/raeseoklee/tomcat-sentinel/internal/recovery"
 )
 
 var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "jvm-sentinel: %v\n", err)
+		fmt.Fprintf(os.Stderr, "tomcat-sentinel: %v\n", err)
 		os.Exit(1)
 	}
 }

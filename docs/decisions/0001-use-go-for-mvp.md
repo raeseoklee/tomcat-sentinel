@@ -6,7 +6,7 @@ Accepted.
 
 ## Context
 
-JVM Sentinel must run beside Tomcat, Netty, or another single JVM service on very small servers, including 1 vCPU / 512 MiB RAM hosts. It also needs a future path to Linux, Unix-like systems, macOS, and Windows.
+Tomcat Sentinel must run beside Tomcat, Netty, or another single JVM service on very small servers, including 1 vCPU / 512 MiB RAM hosts. It also needs a future path to Linux, Unix-like systems, macOS, and Windows.
 
 The main implementation choices considered were Go and Rust.
 

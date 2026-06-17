@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=netty
 Group=netty
-ExecStart=/usr/local/bin/jvm-sentinel -config /etc/jvm-sentinel/netty.properties
+ExecStart=/usr/local/bin/tomcat-sentinel -config /etc/tomcat-sentinel/netty.properties
 Restart=always
 RestartSec=5
 KillSignal=SIGTERM
@@ -21,7 +21,7 @@ Environment=GOGC=50
 NoNewPrivileges=true
 PrivateTmp=false
 ProtectSystem=full
-ReadWritePaths=/opt/netty-api /var/lib/netty-api /var/backups/jvm-sentinel /var/log/jvm-sentinel
+ReadWritePaths=/opt/netty-api /var/lib/netty-api /var/backups/tomcat-sentinel /var/log/tomcat-sentinel
 
 [Install]
 WantedBy=multi-user.target

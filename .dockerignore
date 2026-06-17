@@ -1,6 +1,6 @@
 *
-!dist/jvm-sentinel-linux-amd64
-!dist/jvm-sentinel-linux-arm64
+!dist/tomcat-sentinel-linux-amd64
+!dist/tomcat-sentinel-linux-arm64
 !docker/live/Dockerfile
 !docker/live/entrypoint.sh
 

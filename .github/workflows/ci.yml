@@ -40,8 +40,8 @@ jobs:
       - name: Upload Linux binaries
         uses: actions/upload-artifact@v7
         with:
-          name: jvm-sentinel-linux
+          name: tomcat-sentinel-linux
           path: |
-            dist/jvm-sentinel-linux-amd64
-            dist/jvm-sentinel-linux-arm64
+            dist/tomcat-sentinel-linux-amd64
+            dist/tomcat-sentinel-linux-arm64
           if-no-files-found: error

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-IMAGE="${IMAGE:-jvm-sentinel:live-smoke}"
+IMAGE="${IMAGE:-tomcat-sentinel:live-smoke}"
 
 SERVER_ARCH="$(docker version --format '{{.Server.Arch}}' 2>/dev/null || uname -m)"
 case "$SERVER_ARCH" in

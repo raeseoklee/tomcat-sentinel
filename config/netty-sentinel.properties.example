@@ -1,4 +1,4 @@
-# jvm-sentinel Netty/JVM app config example
+# tomcat-sentinel Netty/JVM app config example
 #
 # This monitors one Netty-based JVM process using the same PID/log/backup/restart
 # engine. The application must write a stable PID file during startup.
@@ -15,7 +15,7 @@ pid.file=${app.base}/run/netty-api.pid
 
 log.paths=${app.base}/logs/app.log,${app.base}/logs/app.*.log
 
-backup.dir=/var/backups/jvm-sentinel/${app.name}
+backup.dir=/var/backups/tomcat-sentinel/${app.name}
 backup.max_bytes_per_file=8388608
 backup.copy_buffer_bytes=32768
 backup.retention.days=7

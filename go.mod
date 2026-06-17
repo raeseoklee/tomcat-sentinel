@@ -1,3 +1,3 @@
-module github.com/raeseoklee/jvm-sentinel
+module github.com/raeseoklee/tomcat-sentinel
 
 go 1.22

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/command"
+	"github.com/raeseoklee/tomcat-sentinel/internal/command"
 )
 
 type Inspector interface {

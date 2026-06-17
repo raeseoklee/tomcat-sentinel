@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/command"
+	"github.com/raeseoklee/tomcat-sentinel/internal/command"
 )
 
 func TestProcInspectorReadsAliveProcess(t *testing.T) {

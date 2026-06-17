@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	EnvPrefix       = "JVM_SENTINEL_"
-	LegacyEnvPrefix = "TOMCAT_SENTINEL_"
+	EnvPrefix       = "TOMCAT_SENTINEL_"
+	LegacyEnvPrefix = "JVM_SENTINEL_"
 )
 
 var knownKeys = []string{
@@ -159,7 +159,7 @@ func Default() Config {
 			"/opt/tomcat/logs/localhost.*.log",
 		},
 		Backup: BackupConfig{
-			Dir:             "/var/backups/jvm-sentinel",
+			Dir:             "/var/backups/tomcat-sentinel",
 			MaxBytesPerFile: 8 * 1024 * 1024,
 			CopyBufferBytes: 32 * 1024,
 			RetentionDays:   7,

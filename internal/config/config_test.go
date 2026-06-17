@@ -25,8 +25,8 @@ command.env=JAVA_HOME=/jvm,APP_LOG_DIR=${app.base}/logs
 		t.Fatal(err)
 	}
 	t.Setenv("TOMCAT_SENTINEL_CHECK_INTERVAL", "30s")
-	t.Setenv("JVM_SENTINEL_CHECK_INTERVAL", "45s")
-	t.Setenv("JVM_SENTINEL_BACKUP_MAX_BYTES_PER_FILE", "12345")
+	t.Setenv("TOMCAT_SENTINEL_CHECK_INTERVAL", "45s")
+	t.Setenv("TOMCAT_SENTINEL_BACKUP_MAX_BYTES_PER_FILE", "12345")
 
 	cfg, err := Load(path)
 	if err != nil {

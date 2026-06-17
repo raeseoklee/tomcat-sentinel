@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/backup"
-	"github.com/raeseoklee/jvm-sentinel/internal/command"
-	"github.com/raeseoklee/jvm-sentinel/internal/config"
-	"github.com/raeseoklee/jvm-sentinel/internal/logscan"
-	"github.com/raeseoklee/jvm-sentinel/internal/process"
+	"github.com/raeseoklee/tomcat-sentinel/internal/backup"
+	"github.com/raeseoklee/tomcat-sentinel/internal/command"
+	"github.com/raeseoklee/tomcat-sentinel/internal/config"
+	"github.com/raeseoklee/tomcat-sentinel/internal/logscan"
+	"github.com/raeseoklee/tomcat-sentinel/internal/process"
 )
 
 type Sentinel struct {

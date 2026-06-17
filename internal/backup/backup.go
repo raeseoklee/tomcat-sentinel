@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/logscan"
+	"github.com/raeseoklee/tomcat-sentinel/internal/logscan"
 )
 
 type Manager struct {

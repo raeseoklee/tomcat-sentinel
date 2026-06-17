@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/raeseoklee/jvm-sentinel/internal/config"
-	"github.com/raeseoklee/jvm-sentinel/internal/process"
+	"github.com/raeseoklee/tomcat-sentinel/internal/config"
+	"github.com/raeseoklee/tomcat-sentinel/internal/process"
 )
 
 func TestCheckOnceDoesNothingWhenProcessAlive(t *testing.T) {
