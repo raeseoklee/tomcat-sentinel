@@ -1,0 +1,73 @@
+# jvm-sentinel MVP config
+#
+# The MVP config format is intentionally simple: key=value.
+# Environment variables with JVM_SENTINEL_ prefix may override selected keys.
+
+# Required application paths. Tomcat aliases are kept for compatibility.
+app.name=tomcat
+app.kind=tomcat
+app.home=/opt/tomcat
+app.base=/opt/tomcat
+
+# Tomcat-specific aliases. These map to app.home and app.base.
+tomcat.home=/opt/tomcat
+tomcat.base=/opt/tomcat
+
+# Prefer configuring CATALINA_PID in Tomcat and pointing sentinel at the same file.
+pid.file=/opt/tomcat/temp/tomcat.pid
+
+# Optional PID resolver command. If set, this takes precedence over pid.file.
+# pid.command=pgrep -f 'org.apache.catalina.startup.Bootstrap'
+
+# Log files to inspect and back up. Comma-separated glob patterns.
+log.paths=/opt/tomcat/logs/catalina.out,/opt/tomcat/logs/catalina.*.log,/opt/tomcat/logs/localhost.*.log
+
+# Backup location for incident bundles.
+backup.dir=/var/backups/jvm-sentinel
+backup.max_bytes_per_file=8388608
+backup.copy_buffer_bytes=32768
+backup.retention.days=7
+
+# Default restart commands. Override when Tomcat is wrapped by another script.
+start.command=/opt/tomcat/bin/catalina.sh start
+stop.command=/opt/tomcat/bin/catalina.sh stop
+command.env=
+
+# Optional status command. Used as a secondary liveness signal if configured.
+# status.command=/opt/tomcat/bin/catalina.sh status
+
+# Runtime intervals. Defaults target 1 vCPU / 512 MiB hosts.
+check.interval=15s
+down.debounce=3s
+command.timeout=60s
+command.output_max_bytes=32768
+startup.verify.timeout=90s
+startup.verify.interval=2s
+
+# Low-memory log scanning. Only recent log tails are inspected.
+log.scan_tail_bytes=524288
+log.scan_max_files=4
+
+# Restart limiting.
+restart.cooldown=30s
+restart.max_attempts=3
+restart.window=10m
+restart.on_unknown=false
+restart.when_backup_fails=true
+restart.min_mem_available_mb=32
+
+# Sentinel resource budget. The tiny profile targets 1 vCPU / 512 MiB hosts.
+resource.profile=tiny-1vcpu-512m
+resource.soft_rss_limit_mb=24
+resource.compression_enabled=false
+
+# Process safety. If set, resolved PID command line must contain this value.
+process.command_hint=org.apache.catalina.startup.Bootstrap
+
+# Custom pattern lists are comma-separated substrings.
+oom.patterns=java.lang.OutOfMemoryError,GC overhead limit exceeded,Java heap space,Metaspace,unable to create native thread,Killed,Out of memory: Kill process
+shutdown.patterns=Destroying ProtocolHandler,Stopping service [Catalina],SEVERE
+
+# Sentinel logging. Leave empty to use stdout/stderr only.
+sentinel.log.file=
+sentinel.log.level=info

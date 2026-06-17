@@ -1,0 +1,55 @@
+# jvm-sentinel Netty/JVM app config example
+#
+# This monitors one Netty-based JVM process using the same PID/log/backup/restart
+# engine. The application must write a stable PID file during startup.
+
+app.name=netty-api
+app.kind=netty
+app.home=/opt/netty-api
+app.base=/var/lib/netty-api
+
+pid.file=${app.base}/run/netty-api.pid
+
+# Optional fallback when no PID file is available. PID file is still preferred.
+# pid.command=pgrep -f 'com.example.netty.Main'
+
+log.paths=${app.base}/logs/app.log,${app.base}/logs/app.*.log
+
+backup.dir=/var/backups/jvm-sentinel/${app.name}
+backup.max_bytes_per_file=8388608
+backup.copy_buffer_bytes=32768
+backup.retention.days=7
+
+# Prefer small wrapper scripts that manage PID file creation/removal correctly.
+start.command=${app.home}/bin/start.sh
+stop.command=${app.home}/bin/stop.sh
+command.env=JAVA_HOME=/usr/lib/jvm/default-java,JAVA_OPTS=-Xms64m -Xmx256m
+
+check.interval=15s
+down.debounce=3s
+command.timeout=60s
+command.output_max_bytes=32768
+startup.verify.timeout=90s
+startup.verify.interval=2s
+
+log.scan_tail_bytes=524288
+log.scan_max_files=4
+
+restart.cooldown=30s
+restart.max_attempts=3
+restart.window=10m
+restart.on_unknown=false
+restart.when_backup_fails=true
+restart.min_mem_available_mb=32
+
+resource.profile=tiny-1vcpu-512m
+resource.soft_rss_limit_mb=24
+resource.compression_enabled=false
+
+process.command_hint=com.example.netty.Main
+
+oom.patterns=java.lang.OutOfMemoryError,GC overhead limit exceeded,Java heap space,Metaspace,unable to create native thread,Killed,Out of memory: Kill process
+shutdown.patterns=Shutdown,Stopping,Terminated,SEVERE
+
+sentinel.log.file=
+sentinel.log.level=info

@@ -1,0 +1,27 @@
+[Unit]
+Description=Netty App Sentinel
+After=network.target
+
+[Service]
+Type=simple
+User=netty
+Group=netty
+ExecStart=/usr/local/bin/jvm-sentinel -config /etc/jvm-sentinel/netty.properties
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+Environment=JAVA_HOME=/usr/lib/jvm/default-java
+Environment=GOMEMLIMIT=24MiB
+Environment=GOGC=50
+
+# Adjust these paths to match app.home, app.base, backup.dir, and sentinel log paths.
+# Avoid MemoryMax/CPUQuota here when the sentinel starts the JVM directly.
+NoNewPrivileges=true
+PrivateTmp=false
+ProtectSystem=full
+ReadWritePaths=/opt/netty-api /var/lib/netty-api /var/backups/jvm-sentinel /var/log/jvm-sentinel
+
+[Install]
+WantedBy=multi-user.target
